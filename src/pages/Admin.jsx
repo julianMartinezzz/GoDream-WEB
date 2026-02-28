@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, RefreshCw, Search, Trash2, X, Save, UserCheck } from 'lucide-react';
+import { Users, RefreshCw, Search, Trash2, X, Save, UserCheck, List, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Sidebar from '../components/admin/Sidebar';
 
 const Admin = () => {
@@ -8,16 +8,15 @@ const Admin = () => {
     const [filteredLeads, setFilteredLeads] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filtroPlan, setFiltroPlan] = useState('Todos');
+    const [filtroEstado, setFiltroEstado] = useState('TODOS'); // Nuevo filtro por estado
 
     const [leadSeleccionado, setLeadSeleccionado] = useState(null);
     const [notaTemporal, setNotaTemporal] = useState('');
     const [guardandoNota, setGuardandoNota] = useState(false);
 
-    // Definición de estados para el flujo completo
     const ESTADOS = [
         { id: 'NUEVO', label: 'Nuevo', color: 'bg-blue-100 text-blue-700' },
-        { id: 'CONTESTADO', label: 'Contestado', color: 'bg-purple-100 text-purple-700' },
+        { id: 'VALIDANDO', label: 'Validando', color: 'bg-purple-100 text-purple-700' },
         { id: 'PENDIENTE_INSTALACION', label: 'Pendiente Inst.', color: 'bg-orange-100 text-orange-700' },
         { id: 'INSTALADA', label: 'Instalada ✅', color: 'bg-green-100 text-green-700' },
         { id: 'CANCELADA', label: 'Cancelada ❌', color: 'bg-red-100 text-red-700' }
@@ -44,16 +43,19 @@ const Admin = () => {
 
     useEffect(() => { fetchData(); }, []);
 
+    // --- LÓGICA DE FILTRADO COMBINADA (Buscador + Filtro de Estado) ---
     useEffect(() => {
         let results = leads.filter(lead =>
             lead.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
             lead.telefono.includes(searchTerm)
         );
-        if (filtroPlan !== 'Todos') {
-            results = results.filter(lead => lead.plan?.includes(filtroPlan));
+
+        if (filtroEstado !== 'TODOS') {
+            results = results.filter(lead => lead.estado === filtroEstado);
         }
+
         setFilteredLeads(results);
-    }, [searchTerm, leads, filtroPlan]);
+    }, [searchTerm, leads, filtroEstado]);
 
     const asignarAsesor = async (leadId, asesorId) => {
         if (!asesorId) return;
@@ -102,7 +104,6 @@ const Admin = () => {
         } catch (error) { alert("Error al eliminar"); }
     };
 
-    // Nueva función para cambiar a cualquier estado
     const cambiarEstado = async (id, nuevoEstado) => {
         try {
             const res = await fetch(`http://localhost:8080/api/leads/${id}/estado`, {
@@ -124,7 +125,7 @@ const Admin = () => {
             <main className={`flex-1 ml-64 p-10 transition-all ${leadSeleccionado ? 'pr-96 opacity-40' : ''}`}>
                 <div className="max-w-7xl mx-auto">
 
-                    {/* Header */}
+                    {/* Header con Buscador */}
                     <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
                         <div className="flex items-center gap-4">
                             <div className="p-4 bg-slate-900 rounded-3xl text-white shadow-xl"><Users /></div>
@@ -134,18 +135,44 @@ const Admin = () => {
                             </div>
                         </div>
 
-                        <div className="flex gap-3">
-                            <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar cliente..."
-                                    className="pl-12 pr-4 py-4 bg-white rounded-2xl outline-none shadow-sm w-80 border border-transparent focus:border-orange-500 transition-all"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
+                        <div className="relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                            <input
+                                type="text"
+                                placeholder="Buscar por nombre o teléfono..."
+                                className="pl-12 pr-4 py-4 bg-white rounded-2xl outline-none shadow-sm w-80 border border-transparent focus:border-orange-500 transition-all"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
+                    </div>
+
+                    {/* NUEVA BARRA DE FILTROS RÁPIDOS */}
+                    <div className="flex flex-wrap gap-3 mb-8 bg-white p-4 rounded-[28px] shadow-sm border border-slate-100">
+                        <button
+                            onClick={() => setFiltroEstado('TODOS')}
+                            className={`px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${filtroEstado === 'TODOS' ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                        >
+                            <List size={14}/> Todos ({leads.length})
+                        </button>
+                        <button
+                            onClick={() => setFiltroEstado('PENDIENTE_INSTALACION')}
+                            className={`px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${filtroEstado === 'PENDIENTE_INSTALACION' ? 'bg-orange-500 text-white shadow-lg' : 'bg-orange-50 text-orange-400 hover:bg-orange-100'}`}
+                        >
+                            <Clock size={14}/> Pendientes ({leads.filter(l => l.estado === 'PENDIENTE_INSTALACION').length})
+                        </button>
+                        <button
+                            onClick={() => setFiltroEstado('INSTALADA')}
+                            className={`px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${filtroEstado === 'INSTALADA' ? 'bg-green-600 text-white shadow-lg' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
+                        >
+                            <CheckCircle size={14}/> Instaladas ({leads.filter(l => l.estado === 'INSTALADA').length})
+                        </button>
+                        <button
+                            onClick={() => setFiltroEstado('CANCELADA')}
+                            className={`px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${filtroEstado === 'CANCELADA' ? 'bg-red-500 text-white shadow-lg' : 'bg-red-50 text-red-400 hover:bg-red-100'}`}
+                        >
+                            <XCircle size={14}/> Canceladas ({leads.filter(l => l.estado === 'CANCELADA').length})
+                        </button>
                     </div>
 
                     {/* Tabla */}
@@ -213,7 +240,7 @@ const Admin = () => {
                 </div>
             </main>
 
-            {/* PANEL LATERAL (DISEÑO ORIGINAL) */}
+            {/* PANEL LATERAL (DETALLES Y NOTAS) */}
             <div className={`fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 transform transition-transform duration-500 ease-in-out ${leadSeleccionado ? 'translate-x-0' : 'translate-x-full'}`}>
                 {leadSeleccionado && (
                     <div className="p-8 h-full flex flex-col">
