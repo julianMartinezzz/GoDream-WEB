@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Users, RefreshCw, MessageCircle, Search, CheckCircle2, LogOut, Clock, Trash2, X, Save, FileDown, Filter } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import * as XLSX from 'xlsx'; // Importante: instala con npm install xlsx
+import { Users, RefreshCw, Search, CheckCircle2, Clock, Trash2, X, Save, FileDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import Sidebar from '../components/admin/Sidebar';
+import Stats from '../components/admin/Stats';
 
 const Admin = () => {
     const [leads, setLeads] = useState([]);
@@ -10,7 +11,6 @@ const Admin = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filtroPlan, setFiltroPlan] = useState('Todos');
 
-    // Estados para el Panel Lateral de Notas
     const [leadSeleccionado, setLeadSeleccionado] = useState(null);
     const [notaTemporal, setNotaTemporal] = useState('');
 
@@ -30,23 +30,19 @@ const Admin = () => {
 
     useEffect(() => { fetchLeads(); }, []);
 
-    // Lógica combinada de Búsqueda y Filtro por Plan
     useEffect(() => {
         let results = leads.filter(lead =>
             lead.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
             lead.telefono.includes(searchTerm)
         );
-
         if (filtroPlan !== 'Todos') {
             results = results.filter(lead => lead.plan.includes(filtroPlan));
         }
-
         setFilteredLeads(results);
     }, [searchTerm, leads, filtroPlan]);
 
     const eliminarLead = async (id) => {
-        if (!window.confirm("¿Estás seguro de eliminar este lead? Esta acción no se puede deshacer.")) return;
-
+        if (!window.confirm("¿Estás seguro de eliminar este lead?")) return;
         try {
             const response = await fetch(`http://localhost:8080/api/leads/${id}`, { method: 'DELETE' });
             if (response.ok) {
@@ -65,7 +61,6 @@ const Admin = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ notas: notaTemporal })
             });
-
             if (response.ok) {
                 setLeads(leads.map(l => l.id === leadSeleccionado.id ? { ...l, notas: notaTemporal } : l));
                 alert("Nota guardada correctamente");
@@ -78,8 +73,8 @@ const Admin = () => {
     const exportarExcel = () => {
         const worksheet = XLSX.utils.json_to_sheet(filteredLeads);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Leads GoDream");
-        XLSX.writeFile(workbook, "Leads_GoDream_Reporte.xlsx");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
+        XLSX.writeFile(workbook, "Leads_GoDream.xlsx");
     };
 
     const toggleEstado = async (id, estadoActual) => {
@@ -99,55 +94,48 @@ const Admin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] font-sans relative overflow-hidden">
-            <div className={`p-4 md:p-10 transition-all duration-500 ${leadSeleccionado ? 'mr-96 opacity-50 pointer-events-none' : ''}`}>
+        <div className="flex min-h-screen bg-[#F8FAFC]">
+            <Sidebar />
+
+            <main className={`flex-1 ml-64 p-10 transition-all duration-500 ${leadSeleccionado ? 'pr-[420px] opacity-50 pointer-events-none' : ''}`}>
                 <div className="max-w-7xl mx-auto">
-                    {/* Header */}
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+                    <Stats />
+
+                    <div className="flex flex-col md:flex-row justify-between items-center my-10 gap-6">
                         <div className="flex items-center gap-4">
-                            <div className="p-4 bg-godream-orange rounded-3xl shadow-lg">
+                            <div className="p-4 bg-godream-orange rounded-3xl shadow-lg shadow-orange-200">
                                 <Users className="text-white w-8 h-8" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-black text-slate-900">Panel Pro</h1>
-                                <p className="text-slate-500 font-medium">Gestión avanzada de clientes</p>
+                                <h1 className="text-3xl font-black text-slate-900">Panel de Leads</h1>
+                                <p className="text-slate-500 font-medium">Gestión de prospectos entrantes</p>
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                            <button onClick={exportarExcel} className="flex items-center gap-2 px-4 py-4 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-all shadow-md active:scale-95">
-                                <FileDown className="w-5 h-5" /> <span className="hidden lg:inline">Exportar</span>
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                            <button onClick={exportarExcel} className="p-4 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-all shadow-md">
+                                <FileDown className="w-5 h-5" />
                             </button>
-
-                            <select
-                                value={filtroPlan}
-                                onChange={(e) => setFiltroPlan(e.target.value)}
-                                className="px-4 py-4 bg-white border-none rounded-2xl shadow-sm outline-none text-slate-600 font-bold focus:ring-2 focus:ring-orange-100"
-                            >
-                                <option value="Todos">Todos los Planes</option>
-                                <option value="Esencial">Plan Esencial</option>
-                                <option value="Pro">Plan Pro</option>
-                            </select>
-
-                            <div className="relative flex-1 md:w-64">
+                            <div className="relative flex-1">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                                <input type="text" placeholder="Buscar..." className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl outline-none shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar cliente..."
+                                    className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl outline-none shadow-sm"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
                             </div>
-
-                            <Link to="/" className="p-4 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-lg">
-                                <LogOut className="w-5 h-5" />
-                            </Link>
                         </div>
                     </div>
 
-                    {/* Tabla */}
-                    <div className="bg-white rounded-[40px] shadow-xl overflow-hidden border border-slate-50">
+                    <div className="bg-white rounded-[40px] shadow-xl overflow-hidden border border-slate-100">
                         <table className="w-full text-left">
-                            <thead>
-                            <tr className="bg-slate-900 text-slate-400 text-[11px] uppercase tracking-widest font-black">
+                            <thead className="bg-slate-900 text-slate-400 text-[11px] uppercase tracking-widest font-black">
+                            <tr>
                                 <th className="p-8">Estado</th>
                                 <th className="p-8">Cliente</th>
-                                <th className="p-8">Plan / Estrato</th>
+                                <th className="p-8">Plan</th>
                                 <th className="p-8 text-center">Acciones</th>
                             </tr>
                             </thead>
@@ -155,7 +143,7 @@ const Admin = () => {
                             {filteredLeads.map((lead) => (
                                 <tr key={lead.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setLeadSeleccionado(lead); setNotaTemporal(lead.notas || ''); }}>
                                     <td className="p-8">
-                                        <div className={`flex items-center gap-2 w-fit px-4 py-2 rounded-full font-black text-[10px] ${lead.estado === 'CONTESTADO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                        <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-black text-[10px] w-fit ${lead.estado === 'CONTESTADO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
                                             {lead.estado === 'CONTESTADO' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
                                             {lead.estado}
                                         </div>
@@ -165,18 +153,16 @@ const Admin = () => {
                                         <div className="text-slate-400 text-sm">{lead.telefono}</div>
                                     </td>
                                     <td className="p-8">
-                                        <div className="text-slate-700 font-bold text-sm">{lead.plan}</div>
-                                        <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black">ESTRATO {lead.estrato}</span>
+                                        <div className="font-bold text-slate-700">{lead.plan}</div>
+                                        <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-black text-slate-500">ESTRATO {lead.estrato}</span>
                                     </td>
-                                    <td className="p-8">
-                                        <div className="flex justify-center gap-3" onClick={(e) => e.stopPropagation()}>
-                                            <button onClick={() => toggleEstado(lead.id, lead.estado)} className="p-3 bg-white border border-slate-200 rounded-xl hover:border-orange-500 transition-all">
-                                                <RefreshCw className="w-5 h-5 text-slate-400" />
-                                            </button>
-                                            <button onClick={() => eliminarLead(lead.id)} className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
-                                        </div>
+                                    <td className="p-8 flex justify-center gap-3" onClick={(e) => e.stopPropagation()}>
+                                        <button onClick={() => toggleEstado(lead.id, lead.estado)} className="p-3 bg-white border rounded-xl hover:border-orange-500 transition-all text-slate-400 hover:text-orange-500">
+                                            <RefreshCw className="w-5 h-5" />
+                                        </button>
+                                        <button onClick={() => eliminarLead(lead.id)} className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -184,48 +170,31 @@ const Admin = () => {
                         </table>
                     </div>
                 </div>
-            </div>
+            </main>
 
-            {/* PANEL LATERAL DE NOTAS */}
-            <div className={`fixed top-0 right-0 h-full w-96 bg-white shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.1)] z-50 transform transition-transform duration-500 ease-in-out ${leadSeleccionado ? 'translate-x-0' : 'translate-x-full'}`}>
+            {/* PANEL DE NOTAS */}
+            <div className={`fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 transform transition-transform duration-500 ${leadSeleccionado ? 'translate-x-0' : 'translate-x-full'}`}>
                 {leadSeleccionado && (
                     <div className="p-8 h-full flex flex-col">
-                        <div className="flex justify-between items-start mb-8">
-                            <div>
-                                <h2 className="text-2xl font-black text-slate-900">{leadSeleccionado.nombre}</h2>
-                                <p className="text-slate-500 font-medium">Gestión de prospecto</p>
-                            </div>
-                            <button onClick={() => setLeadSeleccionado(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-all">
-                                <X className="w-6 h-6 text-slate-600" />
-                            </button>
+                        <div className="flex justify-between mb-8">
+                            <h2 className="text-2xl font-black">{leadSeleccionado.nombre}</h2>
+                            <button onClick={() => setLeadSeleccionado(null)} className="p-2 bg-slate-100 rounded-full"><X /></button>
                         </div>
-
-                        <div className="space-y-6 flex-1 overflow-y-auto pr-2">
-                            <div className="bg-orange-50 p-6 rounded-[30px] border border-orange-100">
-                                <h3 className="text-orange-800 font-black text-xs uppercase tracking-widest mb-4">Detalles del interés</h3>
-                                <div className="space-y-3 text-sm text-orange-900/70">
-                                    <p><strong>Plan:</strong> {leadSeleccionado.plan}</p>
-                                    <p><strong>Email:</strong> {leadSeleccionado.email}</p>
-                                    <p><strong>Teléfono:</strong> {leadSeleccionado.telefono}</p>
-                                </div>
+                        <div className="flex-1 space-y-6">
+                            <div className="bg-orange-50 p-6 rounded-3xl border border-orange-100 text-sm space-y-2">
+                                <p><strong>Email:</strong> {leadSeleccionado.email}</p>
+                                <p><strong>Plan:</strong> {leadSeleccionado.plan}</p>
                             </div>
-
-                            <div className="space-y-3">
-                                <label className="text-slate-900 font-black text-sm">Notas del asesor</label>
-                                <textarea
-                                    className="w-full h-64 p-4 bg-slate-50 border-none rounded-3xl outline-none focus:ring-2 focus:ring-orange-200 transition-all text-slate-700 resize-none"
-                                    placeholder="Escribe aquí el seguimiento de la llamada..."
-                                    value={notaTemporal}
-                                    onChange={(e) => setNotaTemporal(e.target.value)}
-                                />
-                            </div>
+                            <textarea
+                                className="w-full h-64 p-4 bg-slate-50 rounded-3xl outline-none focus:ring-2 focus:ring-orange-200 resize-none"
+                                placeholder="Notas de seguimiento..."
+                                value={notaTemporal}
+                                onChange={(e) => setNotaTemporal(e.target.value)}
+                            />
                         </div>
-
-                        <div className="mt-8 flex gap-3">
-                            <button onClick={guardarNotas} className="flex-1 bg-godream-orange text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-orange-600 shadow-lg shadow-orange-200 transition-all">
-                                <Save className="w-5 h-5" /> GUARDAR NOTAS
-                            </button>
-                        </div>
+                        <button onClick={guardarNotas} className="mt-6 w-full bg-godream-orange text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2">
+                            <Save /> GUARDAR NOTAS
+                        </button>
                     </div>
                 )}
             </div>

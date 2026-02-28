@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, X } from 'lucide-react';
-import miLogo from '../assets/fibraa.png';
+import miLogo from '../../assets/fibraa.png';
 
 const Navbar = () => {
     const [showLogin, setShowLogin] = useState(false);
