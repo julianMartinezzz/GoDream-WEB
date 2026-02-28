@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Wifi, MapPin, Send, CheckCircle, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom'; // Importante para la navegación
+import { User, Mail, Phone, Wifi, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react';
 
 const Contacto = ({ planPredefinido }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [errors, setErrors] = useState({}); // Estado para manejar errores
 
     const [formData, setFormData] = useState({
         nombre: '',
@@ -24,12 +24,42 @@ const Contacto = ({ planPredefinido }) => {
         }
     }, [planPredefinido]);
 
+    // Función de validación
+    const validarFormulario = () => {
+        let newErrors = {};
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const telefonoRegex = /^\d{10}$/; // Valida exactamente 10 dígitos numéricos
+
+        if (!formData.nombre.trim()) newErrors.nombre = "El nombre es requerido";
+
+        if (!emailRegex.test(formData.email)) {
+            newErrors.email = "Ingresa un correo electrónico válido";
+        }
+
+        if (!telefonoRegex.test(formData.telefono)) {
+            newErrors.telefono = "El celular debe tener exactamente 10 dígitos";
+        }
+
+        if (!formData.plan) newErrors.plan = "Selecciona un plan";
+        if (!formData.estrato) newErrors.estrato = "Selecciona tu estrato";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        // Limpiamos el error del campo cuando el usuario empieza a escribir
+        if (errors[e.target.name]) {
+            setErrors({ ...errors, [e.target.name]: null });
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validarFormulario()) return; // Si no es válido, no enviamos
+
         setIsSubmitting(true);
 
         try {
@@ -53,9 +83,6 @@ const Contacto = ({ planPredefinido }) => {
 
     return (
         <div className="bg-slate-900 rounded-[40px] p-8 md:p-16 text-white shadow-2xl relative overflow-hidden border border-white/10">
-
-
-            {/* Decoración de fondo */}
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-godream-orange/10 rounded-full blur-3xl"></div>
 
             <div className="max-w-3xl mx-auto relative z-10">
@@ -68,24 +95,39 @@ const Contacto = ({ planPredefinido }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
-                        <div className="relative group">
-                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-godream-orange transition-colors" />
-                            <input name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre completo"
-                                   className="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl focus:border-godream-orange focus:ring-1 focus:ring-godream-orange outline-none transition-all" required />
+                        {/* Campo Nombre */}
+                        <div className="space-y-2">
+                            <div className="relative group">
+                                <User className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.nombre ? 'text-red-400' : 'text-slate-500 group-focus-within:text-godream-orange'}`} />
+                                <input name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre completo"
+                                       className={`w-full bg-white/5 border p-4 pl-12 rounded-2xl outline-none transition-all ${errors.nombre ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-white/10 focus:border-godream-orange focus:ring-1 focus:ring-godream-orange'}`} />
+                            </div>
+                            {errors.nombre && <p className="text-red-400 text-xs font-bold flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.nombre}</p>}
                         </div>
-                        <div className="relative group">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-godream-orange transition-colors" />
-                            <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Correo electrónico"
-                                   className="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl focus:border-godream-orange focus:ring-1 focus:ring-godream-orange outline-none transition-all" required />
+
+                        {/* Campo Email */}
+                        <div className="space-y-2">
+                            <div className="relative group">
+                                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.email ? 'text-red-400' : 'text-slate-500 group-focus-within:text-godream-orange'}`} />
+                                <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Correo electrónico"
+                                       className={`w-full bg-white/5 border p-4 pl-12 rounded-2xl outline-none transition-all ${errors.email ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-white/10 focus:border-godream-orange focus:ring-1 focus:ring-godream-orange'}`} />
+                            </div>
+                            {errors.email && <p className="text-red-400 text-xs font-bold flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.email}</p>}
                         </div>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-6">
-                        <div className="relative group">
-                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-godream-orange transition-colors" />
-                            <input name="telefono" value={formData.telefono} onChange={handleChange} placeholder="Celular"
-                                   className="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl focus:border-godream-orange focus:ring-1 focus:ring-godream-orange outline-none transition-all" required />
+                        {/* Campo Teléfono */}
+                        <div className="space-y-2">
+                            <div className="relative group">
+                                <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.telefono ? 'text-red-400' : 'text-slate-500 group-focus-within:text-godream-orange'}`} />
+                                <input name="telefono" value={formData.telefono} onChange={handleChange} placeholder="Celular (10 dígitos)"
+                                       className={`w-full bg-white/5 border p-4 pl-12 rounded-2xl outline-none transition-all ${errors.telefono ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-white/10 focus:border-godream-orange focus:ring-1 focus:ring-godream-orange'}`} />
+                            </div>
+                            {errors.telefono && <p className="text-red-400 text-xs font-bold flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.telefono}</p>}
                         </div>
+
+                        {/* Campo Plan */}
                         <div className="relative group">
                             <Wifi className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-godream-orange transition-colors" />
                             <select name="plan" value={formData.plan} onChange={handleChange}
@@ -95,6 +137,8 @@ const Contacto = ({ planPredefinido }) => {
                                 <option value="Plan Pro - 1 Gbps" className="text-slate-900">1 Gbps</option>
                             </select>
                         </div>
+
+                        {/* Campo Estrato */}
                         <div className="relative group">
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-godream-orange transition-colors" />
                             <select name="estrato" value={formData.estrato} onChange={handleChange}
