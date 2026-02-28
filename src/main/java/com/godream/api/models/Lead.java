@@ -22,13 +22,16 @@ public class Lead {
 
     private String plan;
 
+    // --- NUEVO CAMPO AGREGADO ---
+    private String estrato;
+
     private String estado = "Nuevo";
     private String origen = "Web";
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    // 1. CONSTRUCTOR VACÍO (Obligatorio para JPA/Spring)
+    // 1. CONSTRUCTOR VACÍO
     public Lead() {
     }
 
@@ -39,7 +42,7 @@ public class Lead {
         if (this.origen == null) this.origen = "Web";
     }
 
-    // 2. GETTERS Y SETTERS (Indispensables para que el 400 desaparezca)
+    // 2. GETTERS Y SETTERS
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -55,9 +58,12 @@ public class Lead {
     public String getPlan() { return plan; }
     public void setPlan(String plan) { this.plan = plan; }
 
+    // --- GETTER Y SETTER PARA ESTRATO ---
+    public String getEstrato() { return estrato; }
+    public void setEstrato(String estrato) { this.estrato = estrato; }
+
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
-
 
     public String getOrigen() { return origen; }
     public void setOrigen(String origen) { this.origen = origen; }

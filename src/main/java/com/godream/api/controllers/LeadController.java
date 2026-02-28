@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/leads")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173") // Conexión con Vite/React
 public class LeadController {
 
     @Autowired
@@ -22,16 +22,20 @@ public class LeadController {
 
     @PostMapping
     public ResponseEntity<Lead> guardarLead(@RequestBody Lead lead) {
-        // 1. Guardar en H2
+        // Guardamos el lead con los datos de estrato y plan que vienen de React
         Lead nuevoLead = leadRepository.save(lead);
 
-        // 2. Intentar enviar correo
         try {
-            emailService.enviarConfirmacion(nuevoLead.getEmail(), nuevoLead.getNombre());
-            System.out.println("✅ Registro guardado y correo enviado a: " + nuevoLead.getEmail());
+            // Notificamos al cliente y al equipo de ventas con la información completa
+            emailService.enviarConfirmacion(
+                    nuevoLead.getEmail(),
+                    nuevoLead.getNombre(),
+                    nuevoLead.getPlan(),
+                    nuevoLead.getEstrato()
+            );
+            System.out.println("✅ Lead procesado con éxito: " + nuevoLead.getNombre() + " - Estrato " + nuevoLead.getEstrato());
         } catch (Exception e) {
-            System.err.println("❌ Error en el envío de correo: " + e.getMessage());
-            // Mostramos el error en consola para debuguear, pero el usuario recibe su OK de base de datos
+            System.err.println("❌ El lead se guardó pero falló el envío del correo: " + e.getMessage());
         }
 
         return ResponseEntity.ok(nuevoLead);

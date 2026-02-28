@@ -11,19 +11,22 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void enviarConfirmacion(String destinatario, String nombreCliente) {
+    public void enviarConfirmacion(String destinatario, String nombre, String plan, String estrato) {
         SimpleMailMessage message = new SimpleMailMessage();
 
-        // REEMPLAZA ESTO CON TU CORREO REAL
-        message.setFrom("GoDream <juliand.martinez12@gmail.com>");
         message.setTo(destinatario);
-        message.setSubject("🚀 ¡Bienvenido a la experiencia GoDream!");
-        message.setText("Hola " + nombreCliente + ",\n\n" +
-                "Gracias por interesarte en GoDream. Hemos recibido tus datos correctamente.\n" +
-                "Un asesor experto se pondrá en contacto contigo muy pronto para " +
-                "ayudarte a elegir el mejor plan de fibra óptica.\n\n" +
-                "¡Prepárate para la máxima velocidad!\n\n" +
-                "El equipo de GoDream.");
+        message.setSubject("¡Bienvenido a la experiencia GoDream! 🚀");
+
+        String contenido = "Hola " + nombre + ",\n\n" +
+                "¡Gracias por elegir GoDream! Hemos recibido tu solicitud de instalación con los siguientes detalles:\n\n" +
+                "📌 Plan seleccionado: " + plan + "\n" +
+                "🏠 Estrato informado: " + estrato + "\n\n" +
+                "Uno de nuestros asesores técnicos se comunicará contigo en las próximas 24 horas para programar la visita de instalación.\n\n" +
+                "¡Prepárate para volar con la mejor conexión!\n\n" +
+                "Atentamente,\n" +
+                "El equipo de GoDream.";
+
+        message.setText(contenido);
 
         mailSender.send(message);
     }

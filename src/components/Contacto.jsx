@@ -1,96 +1,91 @@
-import { useState } from 'react';
-import { sendLead } from '../main/java/com/godream/api/services/api'; // Asegúrate de que la ruta a api.js sea correcta
+import React, { useState, useEffect } from 'react';
 
-export default function Contacto() {
-    const [enviando, setEnviando] = useState(false);
+const Contacto = ({ planPredefinido }) => {
+    const [formData, setFormData] = useState({
+        nombre: '',
+        email: '',
+        telefono: '',
+        plan: '',
+        estrato: '', // Nuevo campo
+        origen: 'Web Principal',
+        estado: 'NUEVO'
+    });
+
+    // Sincronizar con la elección de la sección Planes
+    useEffect(() => {
+        if (planPredefinido) {
+            // Extraemos el nombre del plan (antes del paréntesis) y el estrato
+            const nombrePlan = planPredefinido.split(' (')[0];
+            const estratoDetectado = planPredefinido.includes('1-3') ? '1-3' : '4-6';
+
+            setFormData(prev => ({
+                ...prev,
+                plan: nombrePlan,
+                estrato: estratoDetectado
+            }));
+        }
+    }, [planPredefinido]);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        alert("¡El botón funciona!");
-        setEnviando(true);
-
-        // Capturamos los datos del formulario usando el atributo 'name' de los inputs
-        const formData = new FormData(e.target);
-        const data = {
-            nombre: formData.get('nombre'),
-            email: formData.get('email'),
-            telefono: formData.get('telefono'),
-            plan: formData.get('plan')
-        };
-
         try {
-            await sendLead(data);
-            alert("¡Solicitud enviada con éxito! Revisa tu correo.");
-            e.target.reset(); // Limpia el formulario tras el éxito
+            const response = await fetch('http://localhost:8080/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                alert("🚀 ¡Solicitud enviada con éxito! Revisa tu correo.");
+                setFormData({ nombre: '', email: '', telefono: '', plan: '', estrato: '', origen: 'Web Principal', estado: 'NUEVO' });
+            }
         } catch (error) {
-            alert("Hubo un error al enviar la solicitud. Intenta de nuevo.");
-            console.error(error);
-        } finally {
-            setEnviando(false);
+            console.error("Error:", error);
+            alert("Hubo un problema al conectar con el servidor.");
         }
     };
 
     return (
-        <section className="py-20 flex flex-col md:flex-row gap-16" id="contacto">
-            {/* Información de contacto (Izquierda) */}
-            <div className="flex-1 space-y-8">
-                <div>
-                    <span className="bg-orange-100 text-orange-700 px-4 py-1 rounded-full text-sm font-bold">✉️ Contáctanos</span>
-                    <h2 className="text-5xl font-black text-slate-900 mt-4 leading-tight">¿Listo para<br />conectarte?</h2>
-                    <p className="text-gray-500 mt-4">Déjanos tus datos y un asesor de GoDream se comunicará contigo para activar tu servicio de GigaFibra.</p>
+        <div className="bg-slate-900 rounded-[50px] p-8 md:p-16 text-white shadow-2xl border border-white/5">
+            <div className="max-w-3xl mx-auto">
+                <div className="text-center mb-10">
+                    <h2 className="text-4xl md:text-5xl font-black mb-4">¡Pide tu instalación!</h2>
+                    <p className="text-slate-400">Completa tus datos y vuela con la mejor fibra óptica.</p>
                 </div>
 
-                <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-orange-50 p-4 rounded-2xl text-orange-600">📞</div>
-                        <div>
-                            <p className="font-bold text-slate-800 text-lg">Teléfono</p>
-                            <p className="text-gray-500">+57 (323) 3849-765</p>
-                        </div>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid md:grid-cols-2 gap-5">
+                        <input name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre completo" className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full focus:border-godream-orange outline-none transition-all" required />
+                        <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Correo electrónico" className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full focus:border-godream-orange outline-none transition-all" required />
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="bg-orange-50 p-4 rounded-2xl text-orange-600">📧</div>
-                        <div>
-                            <p className="font-bold text-slate-800 text-lg">Email</p>
-                            <p className="text-gray-500">ventas@godream.com</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Formulario (Derecha) */}
-            <div className="flex-1 bg-white p-10 rounded-[40px] shadow-2xl shadow-slate-200 border border-slate-100">
-                <form className="space-y-5" onSubmit={handleSubmit}>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Nombre completo</label>
-                        <input name="nombre" type="text" placeholder="Tu nombre" required className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Email</label>
-                            <input name="email" type="email" placeholder="tu@email.com" required className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Teléfono</label>
-                            <input name="telefono" type="text" placeholder="+57 (323) ..." required className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Plan de interés</label>
-                        <select name="plan" className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none appearance-none">
-                            <option value="Plan Esencial — 500 Mbps">Plan Esencial — 500 Mbps</option>
-                            <option value="Plan Ultra — 1 Gbps">Plan Ultra — 1 Gbps</option>
+                    <div className="grid md:grid-cols-3 gap-5">
+                        <input name="telefono" value={formData.telefono} onChange={handleChange} placeholder="Teléfono / WhatsApp" className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full focus:border-godream-orange outline-none transition-all" required />
+
+                        <select name="plan" value={formData.plan} onChange={handleChange} className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full focus:border-godream-orange outline-none transition-all appearance-none" required>
+                            <option value="" disabled className="text-slate-900">Elegir Plan</option>
+                            <option value="Plan Esencial - 500 Mbps" className="text-slate-900">500 Mbps</option>
+                            <option value="Plan Pro - 1 Gbps" className="text-slate-900">1 Gbps</option>
+                        </select>
+
+                        <select name="estrato" value={formData.estrato} onChange={handleChange} className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full focus:border-godream-orange outline-none transition-all appearance-none" required>
+                            <option value="" disabled className="text-slate-900">Estrato</option>
+                            <option value="1-3" className="text-slate-900">Estrato 1, 2 o 3</option>
+                            <option value="4-6" className="text-slate-900">Estrato 4, 5 o 6</option>
                         </select>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={enviando}
-                        className="w-full bg-godream-orange text-white py-4 rounded-2xl font-bold text-lg hover:bg-orange-600 transition-all flex items-center justify-center gap-2 disabled:bg-gray-400"
-                    >
-                        {enviando ? "Enviando..." : "Enviar solicitud"} <span>🚀</span>
+
+                    <button type="submit" className="w-full bg-godream-orange hover:bg-orange-600 py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-orange-500/20 hover:scale-[1.01] active:scale-95">
+                        ENVIAR SOLICITUD AHORA 🚀
                     </button>
                 </form>
             </div>
-        </section>
+        </div>
     );
-}
+};
+
+export default Contacto;
