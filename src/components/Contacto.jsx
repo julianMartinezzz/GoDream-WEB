@@ -1,6 +1,37 @@
+import { useState } from 'react';
+import { sendLead } from '../main/java/com/godream/api/services/api'; // Asegúrate de que la ruta a api.js sea correcta
+
 export default function Contacto() {
+    const [enviando, setEnviando] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        alert("¡El botón funciona!");
+        setEnviando(true);
+
+        // Capturamos los datos del formulario usando el atributo 'name' de los inputs
+        const formData = new FormData(e.target);
+        const data = {
+            nombre: formData.get('nombre'),
+            email: formData.get('email'),
+            telefono: formData.get('telefono'),
+            plan: formData.get('plan')
+        };
+
+        try {
+            await sendLead(data);
+            alert("¡Solicitud enviada con éxito! Revisa tu correo.");
+            e.target.reset(); // Limpia el formulario tras el éxito
+        } catch (error) {
+            alert("Hubo un error al enviar la solicitud. Intenta de nuevo.");
+            console.error(error);
+        } finally {
+            setEnviando(false);
+        }
+    };
+
     return (
-        <section className="py-20 flex flex-col md:flex-row gap-16">
+        <section className="py-20 flex flex-col md:flex-row gap-16" id="contacto">
             {/* Información de contacto (Izquierda) */}
             <div className="flex-1 space-y-8">
                 <div>
@@ -29,34 +60,34 @@ export default function Contacto() {
 
             {/* Formulario (Derecha) */}
             <div className="flex-1 bg-white p-10 rounded-[40px] shadow-2xl shadow-slate-200 border border-slate-100">
-                <form className="space-y-5">
+                <form className="space-y-5" onSubmit={handleSubmit}>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Nombre completo</label>
-                        <input type="text" placeholder="Tu nombre" className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
+                        <input name="nombre" type="text" placeholder="Tu nombre" required className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Email</label>
-                            <input type="email" placeholder="tu@email.com" className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
+                            <input name="email" type="email" placeholder="tu@email.com" required className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Teléfono</label>
-                            <input type="text" placeholder="+57 (323) ..." className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
+                            <input name="telefono" type="text" placeholder="+57 (323) ..." required className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none" />
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Plan de interés</label>
-                        <select className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none appearance-none">
-                            <option>Plan Esencial — 500 Mbps ($59.900 - $69.900/mes)</option>
-                            <option>Plan Ultra — 1 Gbps ($79.900 - 89.900/mes)</option>
+                        <select name="plan" className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none appearance-none">
+                            <option value="Plan Esencial — 500 Mbps">Plan Esencial — 500 Mbps</option>
+                            <option value="Plan Ultra — 1 Gbps">Plan Ultra — 1 Gbps</option>
                         </select>
                     </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Mensaje (opcional)</label>
-                        <textarea placeholder="¿Tienes alguna pregunta?" className="w-full p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-godream-orange outline-none h-32"></textarea>
-                    </div>
-                    <button className="w-full bg-godream-orange text-white py-4 rounded-2xl font-bold text-lg hover:bg-orange-600 transition-all flex items-center justify-center gap-2">
-                        Enviar solicitud <span>🚀</span>
+                    <button
+                        type="submit"
+                        disabled={enviando}
+                        className="w-full bg-godream-orange text-white py-4 rounded-2xl font-bold text-lg hover:bg-orange-600 transition-all flex items-center justify-center gap-2 disabled:bg-gray-400"
+                    >
+                        {enviando ? "Enviando..." : "Enviar solicitud"} <span>🚀</span>
                     </button>
                 </form>
             </div>
