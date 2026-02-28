@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, UserPlus, Trash2, Mail, Phone, Briefcase, Award } from 'lucide-react';
+import { Users, UserPlus, Trash2, Mail, Phone, Briefcase, Award, DollarSign } from 'lucide-react';
 import Sidebar from './Sidebar';
 
 const Equipo = () => {
@@ -11,6 +11,9 @@ const Equipo = () => {
         email: '',
         telefono: ''
     });
+
+    const PRECIO_500MB = 79000;
+    const PRECIO_1GIGA = 89900;
 
     const fetchData = async () => {
         try {
@@ -34,18 +37,36 @@ const Equipo = () => {
 
     useEffect(() => { fetchData(); }, []);
 
-    // --- CÁLCULO DE ESTADÍSTICAS ACTUALIZADO ---
     const getStats = (asesorId) => {
-        if (!leads || !asesorId) return { total: 0, ventas: 0 };
+        if (!leads || !asesorId) return { total: 0, ventas: 0, dinero: 0 };
 
-        // Todos los leads asignados a este asesor
-        const asignados = leads.filter(l => l.asesor?.id === asesorId);
+        // 1. Filtramos leads del asesor (asegurando que el ID coincida como String)
+        const asignados = leads.filter(l => l.asesor && String(l.asesor.id) === String(asesorId));
 
-        // VENTAS REALES: Ahora filtramos por el estado 'INSTALADA'
-        // que es el que genera dinero en la liquidación
-        const ventas = asignados.filter(l => l.estado === 'INSTALADA').length;
+        // 2. Filtramos solo los que están en estado 'INSTALADA'
+        const instaladas = asignados.filter(l => l.estado === 'INSTALADA');
 
-        return { total: asignados.length, ventas };
+        // 3. Calculamos el dinero con la nueva detección de "1 Gbps"
+        const dineroAcumulado = instaladas.reduce((total, lead) => {
+            const planTexto = (lead.plan || "").toLowerCase();
+
+            // Si el plan tiene un "1" (de 1 Gbps) sumamos el precio mayor
+            if (planTexto.includes('1')) {
+                return total + 89900;
+            }
+            // Si el plan tiene un "5" (de 500 Megas) sumamos el precio menor
+            if (planTexto.includes('5')) {
+                return total + 79000;
+            }
+
+            return total;
+        }, 0);
+
+        return {
+            total: asignados.length,
+            ventas: instaladas.length,
+            dinero: dineroAcumulado
+        };
     };
 
     const agregarAsesor = async (e) => {
@@ -66,7 +87,7 @@ const Equipo = () => {
     };
 
     const eliminarAsesor = async (id) => {
-        if (!window.confirm("¿Eliminar asesor? Los leads asignados a él quedarán huérfanos.")) return;
+        if (!window.confirm("¿Eliminar asesor?")) return;
         try {
             const res = await fetch(`http://localhost:8080/api/asesores/${id}`, { method: 'DELETE' });
             if (res.ok) fetchData();
@@ -80,19 +101,16 @@ const Equipo = () => {
             <Sidebar />
             <main className="flex-1 ml-64 p-10">
                 <div className="max-w-7xl mx-auto">
-
-                    {/* Header */}
                     <div className="flex justify-between items-end mb-12">
                         <div>
                             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Mi Equipo</h1>
-                            <p className="text-slate-500 font-medium mt-2">Rendimiento y gestión de asesores comerciales</p>
+                            <p className="text-slate-500 font-medium mt-2">Rendimiento comercial y comisiones</p>
                         </div>
                         <div className="bg-orange-500 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 shadow-lg shadow-orange-200">
                             <Users size={20} /> {asesores.length} Asesores Activos
                         </div>
                     </div>
 
-                    {/* Formulario de Registro */}
                     <form onSubmit={agregarAsesor} className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 mb-12 flex flex-wrap gap-4 items-end">
                         <div className="flex-1 min-w-[180px]">
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Nombre</label>
@@ -119,47 +137,50 @@ const Equipo = () => {
                         </button>
                     </form>
 
-                    {/* Grid de Asesores */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {asesores.map(asesor => {
-                            const { total, ventas } = getStats(asesor.id);
+                            const { total, ventas, dinero } = getStats(asesor.id);
                             return (
-                                <div key={asesor.id} className="bg-white rounded-[40px] p-8 shadow-xl border border-slate-50 relative group transition-all hover:-translate-y-1">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 transition-all group-hover:bg-orange-50" />
-
-                                    <div className="relative">
+                                <div key={asesor.id} className="bg-white rounded-[40px] p-8 shadow-xl border border-slate-50 relative group transition-all hover:-translate-y-1 overflow-hidden">
+                                    <div className="relative z-10">
                                         <div className="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-slate-200">
                                             <Briefcase size={28} />
                                         </div>
-                                        <h3 className="text-xl font-black text-slate-900">{asesor.nombre || "Sin nombre"}</h3>
-                                        <p className="text-orange-500 font-bold text-sm mb-6">{asesor.cargo || "Asesor"}</p>
+                                        <h3 className="text-xl font-black text-slate-900">{asesor.nombre}</h3>
+                                        <p className="text-orange-500 font-bold text-sm mb-6">{asesor.cargo}</p>
 
-                                        {/* Estadísticas de Instalaciones */}
-                                        <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <div className="grid grid-cols-2 gap-4 mb-4">
                                             <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 text-center">
-                                                <div className="flex items-center justify-center gap-2 text-slate-400 mb-1"><Users size={14}/> <span className="text-[10px] font-black uppercase">Asignados</span></div>
+                                                <div className="flex items-center justify-center gap-2 text-slate-400 mb-1 font-black text-[9px] uppercase"><Users size={12}/> Asignados</div>
                                                 <div className="text-2xl font-black text-slate-900">{total}</div>
                                             </div>
                                             <div className="bg-green-50 p-4 rounded-3xl border border-green-100 text-center">
-                                                <div className="flex items-center justify-center gap-2 text-green-500 mb-1"><Award size={14}/> <span className="text-[10px] font-black uppercase">Instaladas</span></div>
+                                                <div className="flex items-center justify-center gap-2 text-green-500 mb-1 font-black text-[9px] uppercase"><Award size={12}/> Instaladas</div>
                                                 <div className="text-2xl font-black text-green-600">{ventas}</div>
                                             </div>
                                         </div>
 
-                                        {/* Información de contacto */}
+                                        <div className="bg-slate-900 p-5 rounded-[24px] mb-8 shadow-inner relative overflow-hidden">
+                                            <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                                <DollarSign size={14} className="text-orange-500" />
+                                                <span className="text-[10px] font-black uppercase tracking-wider">Acumulado Ganado</span>
+                                            </div>
+                                            <div className="text-2xl font-black text-white">
+                                                $ {dinero.toLocaleString()}
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-4 mb-8">
-                                            <div className="flex items-center gap-3 text-sm text-slate-500 font-semibold truncate">
-                                                <div className="p-2 bg-slate-100 rounded-lg text-slate-400"><Mail size={14}/></div>
-                                                {asesor.email}
+                                            <div className="flex items-center gap-3 text-sm text-slate-500 font-semibold truncate italic">
+                                                <Mail size={14} className="text-slate-300"/> {asesor.email}
                                             </div>
                                             <div className="flex items-center gap-3 text-sm text-slate-500 font-semibold">
-                                                <div className="p-2 bg-slate-100 rounded-lg text-slate-400"><Phone size={14}/></div>
-                                                {asesor.telefono}
+                                                <Phone size={14} className="text-slate-300"/> {asesor.telefono}
                                             </div>
                                         </div>
 
                                         <button onClick={() => eliminarAsesor(asesor.id)} className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm">
-                                            <Trash2 size={18} /> ELIMINAR ASESOR
+                                            <Trash2 size={18} /> ELIMINAR
                                         </button>
                                     </div>
                                 </div>
