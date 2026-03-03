@@ -36,7 +36,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ✅ Lombok DENTRO de dependencies -->
+        <!-- Lombok DENTRO de dependencies -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -55,7 +55,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <!-- ✅ Excluir Lombok del JAR final -->
+                <!-- Excluir Lombok del JAR final -->
                 <configuration>
                     <excludes>
                         <exclude>
